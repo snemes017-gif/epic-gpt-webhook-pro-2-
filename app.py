@@ -8,7 +8,7 @@ import hashlib
 import datetime as dt
 from typing import Any, Dict
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import requests
 import openai
 
@@ -29,6 +29,7 @@ LOG_TO_CSV = os.getenv("LOG_TO_CSV", "1") == "1"
 CSV_LOG_PATH = os.getenv("CSV_LOG_PATH", "/tmp/epic_webhook_logs.csv")
 
 TEMP_DIR = "/tmp/uploads"
+DOCS_DIR = os.path.join(os.path.dirname(__file__), "docs")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 openai.api_key = OPENAI_API_KEY
@@ -129,6 +130,14 @@ def status():
         "drive_enabled": bool(GOOGLE_SERVICE_JSON and DRIVE_FOLDER_ID),
         "model": OPENAI_MODEL
     }), 200
+
+@app.route("/certificates/", methods=["GET"])
+def certificates_page():
+    return send_from_directory(DOCS_DIR, "index.html")
+
+@app.route("/certificates/<path:filename>", methods=["GET"])
+def certificates_files(filename: str):
+    return send_from_directory(DOCS_DIR, filename, as_attachment=filename.lower().endswith(".pdf"))
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
